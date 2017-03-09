@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stddef.h>
 
 uint32_t littleendian(uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3)
 {
@@ -18,4 +19,20 @@ void wordtobyte(uint8_t* byte, uint32_t word)
 	byte[1] = word >> 8;
 	byte[2] = word >> 16;
 	byte[3] = word >> 24;
+}
+
+void printbytes(uint8_t *byte, size_t size)
+{
+	int i, j;
+
+	for (i = 0; i < size / 16; i++) {
+		for (j = 0; j < 16; j++)
+			printf("%03d, ", byte[i * 16 + j]);
+		// printf("\n");
+	}
+	if (size % 16) {
+		for (j = 0; j < size % 16; j++)
+			printf("%03d, ", byte[i * 16 + j]);
+		// printf("\n");
+	}
 }

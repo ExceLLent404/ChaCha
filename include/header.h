@@ -34,7 +34,13 @@ void chacha_decrypt(uint8_t key[32], uint8_t nonce[8], uint8_t* c,
 uint32_t littleendian(uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3);
 void wordtobyte(uint8_t* byte, uint32_t word);
 
-/* The function for checking ciphers */
+/* The functions for checking for correctness of ciphers
+ and for encryption-decryption test  */
 void salsa_check();
+void salsa_test();
+void chacha_test();
+
+/* Utility function for data output */
+void printbytes(uint8_t *byte, size_t size);
 
 #endif
