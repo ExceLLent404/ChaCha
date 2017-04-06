@@ -19,7 +19,7 @@ void chacha_quarterround(uint32_t *a, uint32_t *b,
 	*b = *b << 7 | *b >> 32 - 7;
 }
 
-void chacha_rowround(uint32_t y[16])
+void chacha_diagonalround(uint32_t y[16])
 {
 	chacha_quarterround(&y[0], &y[5], &y[10], &y[15]);
 	chacha_quarterround(&y[1], &y[6], &y[11], &y[12]);
@@ -38,7 +38,7 @@ void chacha_columnround(uint32_t x[16])
 void chacha_doubleround(uint32_t x[16])
 {
 	chacha_columnround(x);
-	chacha_rowround(x);
+	chacha_diagonalround(x);
 }
 
 void chacha_hash(uint8_t seq[64])

@@ -20,7 +20,7 @@ void salsa_decrypt(uint8_t key[32], uint8_t nonce[8], uint8_t* c,
 /* The functions for ChaCha cipher */
 void chacha_quarterround(uint32_t *a, uint32_t *b,
 			 uint32_t *c, uint32_t *d);
-void chacha_rowround(uint32_t y[16]);
+void chacha_diagonalround(uint32_t y[16]);
 void chacha_columnround(uint32_t x[16]);
 void chacha_doubleround(uint32_t x[16]);
 void chacha_hash(uint8_t x[64]);
