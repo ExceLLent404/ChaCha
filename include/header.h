@@ -38,6 +38,7 @@ void wordtobyte(uint8_t* byte, uint32_t word);
  and for encryption-decryption test  */
 void salsa_check();
 void salsa_test();
+void chacha_check();
 void chacha_test();
 
 /* Utility function for data output */
