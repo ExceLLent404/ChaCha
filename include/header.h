@@ -29,6 +29,11 @@ void chacha_encrypt(uint8_t key[32], uint8_t nonce[8], uint8_t* m,
 					 size_t size, uint8_t* c);
 void chacha_decrypt(uint8_t key[32], uint8_t nonce[8], uint8_t* c,
 					 size_t size, uint8_t* m);
+/* Improved functions */
+void chacha_encrypt_i(uint8_t key[32], uint8_t nonce[8], uint8_t* m,
+					 size_t size, uint8_t* c);
+void chacha_decrypt_i(uint8_t key[32], uint8_t nonce[8], uint8_t* c,
+					 size_t size, uint8_t* m);
 
 /* The functions for both ciphers */
 uint32_t littleendian(uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3);

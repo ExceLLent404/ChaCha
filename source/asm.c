@@ -218,3 +218,242 @@ void chacha_columnround_asm(uint32_t y[16])
 		: "q0", "q1", "q2", "q3", "q4", "q5"
 	);
 }
+
+void chacha_diagonalround_asm_triple(uint32_t y[48])
+{
+	/* Required state:
+	*   y[0],   y[5],  y[10],  y[15]
+	*   y[1],   y[6],  y[11],  y[12]
+	*   y[2],   y[7],  y[8],   y[13]
+	*   y[3],   y[4],  y[9],   y[14]
+	*  q0 = a, q1 = b  q2 = c, q3 = d
+	*/
+	asm(
+		"vldm.32 %[y], {q0-q11}\n\t"
+		/* Now q0-q3 (q4-q7 and q8-q11 too) are:
+		*   y[0],   y[4],  y[8],   y[12]
+		*   y[1],   y[5],  y[9],   y[13]
+		*   y[2],   y[6],  y[10],  y[14]
+		*   y[3],   y[7],  y[11],  y[15]
+		*  q0 = a, q1 = b  q2 = c, q3 = d
+		*/
+		"vext.32 q1, q1, q1, #1\n\t"
+		"vext.32 q4, q4, q4, #1\n\t"
+		"vext.32 q9, q9, q9, #1\n\t"
+		"vext.32 q2, q2, q2, #2\n\t"
+		"vext.32 q6, q6, q6, #2\n\t"
+		"vext.32 q10, q10, q10, #2\n\t"
+		"vext.32 q3, q3, q3, #3\n\t"
+		"vext.32 q7, q7, q7, #3\n\t"
+		"vext.32 q11, q11, q11, #3\n\t"
+		/* Now q0-q3 (q4-q7 and q8-q11 too) are as we need */
+		
+		/* a += b; */
+		"vadd.i32 q0, q1\n\t"
+		"vadd.i32 q4, q5\n\t"
+		"vadd.i32 q8, q9\n\t"
+
+		/* d ^= a; */
+		"veor q3, q0\n\t"
+		"veor q7, q4\n\t"
+		"veor q11, q8\n\t"
+
+		/* q12(13, 14) = d <<< 16;
+		q12(13, 14) is d at the moment */
+		"vshl.i32 q12, q3, #16\n\t"
+		"vshl.i32 q13, q7, #16\n\t"
+		"vshl.i32 q14, q11, #16\n\t"
+		"vsri.32 q12, q3, #16\n\t"
+		"vsri.32 q13, q7, #16\n\t"
+		"vsri.32 q14, q11, #16\n\t"
+
+		/* c += d; */
+		"vadd.i32 q2, q12\n\t"
+		"vadd.i32 q6, q13\n\t"
+		"vadd.i32 q10, q14\n\t"
+
+		/* b ^= c; */
+		"veor q1, q2\n\t"
+		"veor q5, q6\n\t"
+		"veor q9, q10\n\t"
+
+		/* q3(7, 11) = b <<< 12; 
+		q3(7, 11) is b at the moment */
+		"vshl.i32 q3, q1, #12\n\t"
+		"vshl.i32 q7, q5, #12\n\t"
+		"vshl.i32 q11, q9, #12\n\t"
+		"vsri.32 q3, q1, #20\n\t"
+		"vsri.32 q7, q5, #20\n\t"
+		"vsri.32 q11, q9, #20\n\t"
+
+		/* a += b; */
+		"vadd.i32 q0, q3\n\t"
+		"vadd.i32 q4, q7\n\t"
+		"vadd.i32 q8, q11\n\t"
+
+		/* d ^= a; */
+		"veor q12, q0\n\t"
+		"veor q13, q4\n\t"
+		"veor q14, q8\n\t"
+
+		/* q1(5, 9) = d <<< 8;
+		q1(5, 9) is d at the moment */
+		"vshl.i32 q1, q12, #8\n\t"
+		"vshl.i32 q5, q13, #8\n\t"
+		"vshl.i32 q9, q14, #8\n\t"
+		"vsri.32 q1, q12, #24\n\t"
+		"vsri.32 q5, q13, #24\n\t"
+		"vsri.32 q9, q14, #24\n\t"
+
+		/* c += d; */
+		"vadd.i32 q2, q1\n\t"
+		"vadd.i32 q6, q5\n\t"
+		"vadd.i32 q10, q9\n\t"
+
+		/* b ^= c; */
+		"veor q3, q2\n\t"
+		"veor q7, q6\n\t"
+		"veor q11, q10\n\t"
+
+		/* q12(13, 14) = b <<< 7; 
+		q12(13, 14) is b at the moment */
+		"vshl.i32 q12, q3, #7\n\t"
+		"vshl.i32 q13, q7, #7\n\t"
+		"vshl.i32 q14, q11, #7\n\t"
+		"vsri.32 q12, q3, #25\n\t"
+		"vsri.32 q13, q7, #25\n\t"
+		"vsri.32 q14, q11, #25\n\t"
+
+		/* d to q3(7, 11) */
+		"vswp.32 q3, q1\n\t"
+		"vswp.32 q7, q5\n\t"
+		"vswp.32 q11, q9\n\t"
+
+		/* b to q1(5, 9) */
+		"vswp.32 q1, q12\n\t"
+		"vswp.32 q5, q13\n\t"
+		"vswp.32 q9, q14\n\t"
+
+		/* Inverse data allocation */
+		"vext.32 q1, q1, q1, #3\n\t"
+		"vext.32 q5, q5, q5, #3\n\t"
+		"vext.32 q9, q9, q9, #3\n\t"
+		"vext.32 q2, q2, q2, #2\n\t"
+		"vext.32 q6, q6, q6, #2\n\t"
+		"vext.32 q10, q10, q10, #2\n\t"
+		"vext.32 q3, q3, q3, #1\n\t"
+		"vext.32 q7, q7, q7, #1\n\t"
+		"vext.32 q11, q11, q11, #1\n\t"
+		"vstm.32 %[y], {q0-q11}\n\t" 
+		:
+		: [y] "r" (y)
+		: "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+		  "q8", "q9", "q10", "q11", "q12", "q13", "q14"
+	);
+}
+
+void chacha_columnround_asm_triple(uint32_t y[48])
+{
+	/* Required state:
+	*   y[0],   y[4],  y[8],   y[12]
+	*   y[1],   y[5],  y[9],   y[13]
+	*   y[2],   y[6],  y[10],  y[14]
+	*   y[3],   y[7],  y[11],  y[15]
+	*  q0 = a, q1 = b  q2 = c, q3 = d
+	*/
+	asm(
+		"vldm.32 %[y], {q0-q11}\n\t"
+
+		/* a += b; */
+		"vadd.i32 q0, q1\n\t"
+		"vadd.i32 q4, q5\n\t"
+		"vadd.i32 q8, q9\n\t"
+
+		/* d ^= a; */
+		"veor q3, q0\n\t"
+		"veor q7, q4\n\t"
+		"veor q11, q8\n\t"
+
+		/* q12(13, 14) = d <<< 16;
+		q12(13, 14) is d at the moment */
+		"vshl.i32 q12, q3, #16\n\t"
+		"vshl.i32 q13, q7, #16\n\t"
+		"vshl.i32 q14, q11, #16\n\t"
+		"vsri.32 q12, q3, #16\n\t"
+		"vsri.32 q13, q7, #16\n\t"
+		"vsri.32 q14, q11, #16\n\t"
+
+		/* c += d; */
+		"vadd.i32 q2, q12\n\t"
+		"vadd.i32 q6, q13\n\t"
+		"vadd.i32 q10, q14\n\t"
+
+		/* b ^= c; */
+		"veor q1, q2\n\t"
+		"veor q5, q6\n\t"
+		"veor q9, q10\n\t"
+
+		/* q3(7, 11) = b <<< 12; 
+		q3(7, 11) is b at the moment */
+		"vshl.i32 q3, q1, #12\n\t"
+		"vshl.i32 q7, q5, #12\n\t"
+		"vshl.i32 q11, q9, #12\n\t"
+		"vsri.32 q3, q1, #20\n\t"
+		"vsri.32 q7, q5, #20\n\t"
+		"vsri.32 q11, q9, #20\n\t"
+
+		/* a += b; */
+		"vadd.i32 q0, q3\n\t"
+		"vadd.i32 q4, q7\n\t"
+		"vadd.i32 q8, q11\n\t"
+
+		/* d ^= a; */
+		"veor q12, q0\n\t"
+		"veor q13, q4\n\t"
+		"veor q14, q8\n\t"
+
+		/* q1(5, 9) = d <<< 8;
+		q1(5, 9) is d at the moment */
+		"vshl.i32 q1, q12, #8\n\t"
+		"vshl.i32 q5, q13, #8\n\t"
+		"vshl.i32 q9, q14, #8\n\t"
+		"vsri.32 q1, q12, #24\n\t"
+		"vsri.32 q5, q13, #24\n\t"
+		"vsri.32 q9, q14, #24\n\t"
+
+		/* c += d; */
+		"vadd.i32 q2, q1\n\t"
+		"vadd.i32 q6, q5\n\t"
+		"vadd.i32 q10, q9\n\t"
+
+		/* b ^= c; */
+		"veor q3, q2\n\t"
+		"veor q7, q6\n\t"
+		"veor q11, q10\n\t"
+
+		/* q12(13, 14) = b <<< 7; 
+		q12(13, 14) is b at the moment */
+		"vshl.i32 q12, q3, #7\n\t"
+		"vshl.i32 q13, q7, #7\n\t"
+		"vshl.i32 q14, q11, #7\n\t"
+		"vsri.32 q12, q3, #25\n\t"
+		"vsri.32 q13, q7, #25\n\t"
+		"vsri.32 q14, q11, #25\n\t"
+
+		/* d to q3(7, 11) */
+		"vswp.32 q3, q1\n\t"
+		"vswp.32 q7, q5\n\t"
+		"vswp.32 q11, q9\n\t"
+
+		/* b to q1(5, 9) */
+		"vswp.32 q1, q12\n\t"
+		"vswp.32 q5, q13\n\t"
+		"vswp.32 q9, q14\n\t"
+
+		"vstm.32 %[y], {q0-q11}\n\t" 
+		:
+		: [y] "r" (y)
+		: "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+		  "q8", "q9", "q10", "q11", "q12", "q13", "q14"
+	);
+}
