@@ -64,12 +64,12 @@ void chacha_expand(uint8_t k[32], uint8_t n[16], uint8_t seq[64])
 {
 	int i;
 
-	/*
-	constant constant constant constant
-	key      key      key      key
-	key      key      key      key
-	input    input    input    input
-	*/
+	
+	// constant constant constant constant
+	// key      key      key      key
+	// key      key      key      key
+	// input    input    input    input
+	
 	// "expand 32-byte k"
 	seq[0] = 101;
 	seq[1] = 120;
@@ -99,25 +99,18 @@ void chacha_encrypt(uint8_t key[32], uint8_t nonce[8], uint8_t* m,
 {
 	uint8_t out[64];
 	uint8_t n[16];
-	uint8_t number[8] = {0};
 	int i, j, k;
 
 	for (i = 0; i < 8; i++) {
-		n[i] = nonce[i];
-		n[i + 8] = number[i];
+		n[i] = 0;
+		n[i + 8] = nonce[i];
 	}
 
 	for (i = 0; i < size / 64 ; i++) {
 		chacha_expand(key, n, out);
 		for (k = 0; k < 64; k++)
 			c[i * 64 + k] = m[i * 64 + k] ^ out[k];
-		/* number++ */
-		n[8]++;
-		for (j = 0; j < 7; j++)
-			if (!n[j + 8])
-				n[j + 9]++;
-			else
-				break;
+		(*(uint64_t *)n)++; // block_counter++
 	}
 	if (j = size % 64) {
 		chacha_expand(key, n, out);
