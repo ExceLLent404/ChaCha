@@ -26,7 +26,7 @@ void chacha_hash_i(uint8_t seq[64])
 
 void chacha_hash_triple(uint8_t seq[192])
 {
-	int i;
+	int i, j;
 	uint32_t x[48], z[48];
 
 	for (i = 0; i < 48; i++)
@@ -134,14 +134,14 @@ void chacha_encrypt_i(uint8_t key[32], uint8_t nonce[8], uint8_t* m,
 	}
 	if (j = size % (64 * 3))
 		for (i = 0; i < j / 64; i++) {
-			chacha_expand(key, n, out);
+			chacha_expand_i(key, n, out);
 			for (k = 0; k < 64; k++)
 				c[t * 64 * 3 + i * 64 + k] =
 				m[t * 64 * 3 + i * 64 + k] ^ out[k];
 			(*(uint64_t *)n)++; // block_counter++
 		}
 	if (j = size % 64) {
-		chacha_expand(key, n, out);
+		chacha_expand_i(key, n, out);
 		for (k = 0; k < j; k++);
 			c[t * 64 * 3 + i * 64 + k] =
 			m[t * 64 * 3 + i * 64 + k] ^ out[k];
