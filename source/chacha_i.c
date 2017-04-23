@@ -31,8 +31,7 @@ void chacha_hash_triple(uint8_t seq[192])
 
 	for (i = 0; i < 48; i++)
 		x[i] = z[i] = *(uint32_t *)(seq + i * 4);
-	for (i = 0; i < 10; i++)
-		chacha_doubleround_triple(z);
+	chacha_doubleround_asm_triple(z); // with loop
 	for (i = 0; i < 48; i++) {
 		x[i] += z[i];
 		for (j = 0; j < 4; j++)
@@ -118,12 +117,11 @@ void chacha_encrypt_i(uint8_t key[32], uint8_t nonce[8], uint8_t* m,
 {
 	uint8_t out[64], out_triple[192];
 	uint8_t n[16];
-	uint8_t number[8] = {0};
 	int i, j, k, t;
 
 	for (i = 0; i < 8; i++) {
-		n[i] = nonce[i];
-		n[i + 8] = number[i];
+		n[i] = 0;
+		n[i + 8] = nonce[i];
 	}
 
 	for (t = 0; t < size / 64 / 3; t++) {
