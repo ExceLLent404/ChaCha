@@ -436,3 +436,136 @@ void chacha_columnround_asm_triple(uint32_t y[48])
 		  "q8", "q9", "q10", "q11", "q12", "q13", "q14"
 	);
 }
+
+
+/* Loop version */
+void chacha_doubleround_asm_triple(uint32_t x[48]) {
+	asm(
+		"vldm.32 %[y]!, {q0-q7}\n\t"
+		"vldm.32 %[y], {q8-q11}\n\t"
+		"sub %[y], #128\n\t"
+
+		"mov r0, #10\n\t" // loop counter
+		"mov r1, #0\n\t" // flag
+
+		"loop_start:\n\t"
+
+		/* a += b; */
+		"vadd.i32 q0, q1\n\t"
+		"vadd.i32 q4, q5\n\t"
+		"vadd.i32 q8, q9\n\t"
+
+		/* e = d ^ a; */
+		"veor q12, q3, q0\n\t"
+		"veor q13, q7, q4\n\t"
+		"veor q14, q11, q8\n\t"
+
+		/* d = e <<< 16; */
+		"vshl.i32 q3, q12, #16\n\t"
+		"vshl.i32 q7, q13, #16\n\t"
+		"vshl.i32 q11, q14, #16\n\t"
+		"vsri.32 q3, q12, #16\n\t"
+		"vsri.32 q7, q13, #16\n\t"
+		"vsri.32 q11, q14, #16\n\t"
+
+		/* c += d; */
+		"vadd.i32 q2, q3\n\t"
+		"vadd.i32 q6, q7\n\t"
+		"vadd.i32 q10, q11\n\t"
+
+		/* e = b ^ c; */
+		"veor q12, q1, q2\n\t"
+		"veor q13, q5, q6\n\t"
+		"veor q14, q9, q10\n\t"
+
+		/* b = e <<< 12; */
+		"vshl.i32 q1, q3, #12\n\t"
+		"vshl.i32 q5, q7, #12\n\t"
+		"vshl.i32 q9, q11, #12\n\t"
+		"vsri.32 q1, q3, #20\n\t"
+		"vsri.32 q5, q7, #20\n\t"
+		"vsri.32 q9, q11, #20\n\t"
+
+		/* a += b; */
+		"vadd.i32 q0, q1\n\t"
+		"vadd.i32 q4, q5\n\t"
+		"vadd.i32 q8, q9\n\t"
+
+		/* e = d ^ a; */
+		"veor q12, q3, q0\n\t"
+		"veor q13, q7, q4\n\t"
+		"veor q14, q11, q8\n\t"
+
+		/* d = e <<< 8; */
+		"vshl.i32 q3, q12, #8\n\t"
+		"vshl.i32 q7, q13, #8\n\t"
+		"vshl.i32 q11, q14, #8\n\t"
+		"vsri.32 q3, q12, #24\n\t"
+		"vsri.32 q7, q13, #24\n\t"
+		"vsri.32 q11, q14, #24\n\t"
+
+		/* c += d; */
+		"vadd.i32 q2, q3\n\t"
+		"vadd.i32 q6, q7\n\t"
+		"vadd.i32 q10, q11\n\t"
+
+		/* e = b ^ c; */
+		"veor q12, q1, q2\n\t"
+		"veor q13, q5, q6\n\t"
+		"veor q14, q9, q10\n\t"
+
+		/* b = e <<< 7; */
+		"vshl.i32 q3, q12, #7\n\t"
+		"vshl.i32 q7, q13, #7\n\t"
+		"vshl.i32 q11, q14, #7\n\t"
+		"vsri.32 q3, q12, #25\n\t"
+		"vsri.32 q7, q13, #25\n\t"
+		"vsri.32 q11, q14, #25\n\t"
+
+		// if (allocated) goto inverse_allocation
+		"cmp r1, #1\n\t"
+		"beq inverse_allocation"
+
+		/* Diagonalround data allocation */
+		"vext.32 q1, q1, q1, #1\n\t"
+		"vext.32 q5, q5, q5, #1\n\t"
+		"vext.32 q9, q9, q9, #1\n\t"
+		"vext.32 q2, q2, q2, #2\n\t"
+		"vext.32 q6, q6, q6, #2\n\t"
+		"vext.32 q10, q10, q10, #2\n\t"
+		"vext.32 q3, q3, q3, #3\n\t"
+		"vext.32 q7, q7, q7, #3\n\t"
+		"vext.32 q11, q11, q11, #3\n\t"
+
+		"mov r1, #1\n\t"
+		"b loop_start\n\t"
+
+		"inverse_allocation:\n\t"
+
+		/* Inverse data allocation */
+		"vext.32 q1, q1, q1, #3\n\t"
+		"vext.32 q5, q5, q5, #3\n\t"
+		"vext.32 q9, q9, q9, #3\n\t"
+		"vext.32 q2, q2, q2, #2\n\t"
+		"vext.32 q6, q6, q6, #2\n\t"
+		"vext.32 q10, q10, q10, #2\n\t"
+		"vext.32 q3, q3, q3, #1\n\t"
+		"vext.32 q7, q7, q7, #1\n\t"
+		"vext.32 q11, q11, q11, #1\n\t"
+
+		"mov r1, #0\n\t"
+
+		// if (counter > 0) goto loop_start
+		"subs r0, #1\n\t"
+		"bpl loop_start\n\t"
+
+		// loop_end:
+
+		"vstm.32 %[y]!, {q0-q7}\n\t"
+		"vstm.32 %[y], {q8-q11}\n\t"
+		:
+		: [y] "r" (y)
+		: "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+		  "q8", "q9", "q10", "q11", "q12", "q13", "q14"
+	);
+}
