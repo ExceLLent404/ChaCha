@@ -1,0 +1,5 @@
+# Compiled object files
+output/*
+
+# Executable file
+test_chacha20
