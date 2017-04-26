@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <time.h>
-#include "../include/header.h"
 
 #define SIZE_OF_DATA 64
 #define LOAD_NUMBER 1000
