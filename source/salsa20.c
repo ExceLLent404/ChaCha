@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include <stddef.h>
-#include "../include/header.h"
 
 void salsa_quarterround(uint32_t *y0, uint32_t *y1,
 			 uint32_t *y2, uint32_t *y3)
@@ -35,38 +34,29 @@ void salsa_doubleround(uint32_t x[16])
 
 void salsa_hash(uint8_t seq[64])
 {
-	int i;
+	int i, j;
 	uint32_t x[16], z[16];
 
-	for (i = 0; i < 16; i++) {
-		x[i] = littleendian(seq[i * 4], seq[i * 4 + 1],
-				 seq[i * 4 + 2], seq[i * 4 + 3]);
-		z[i] = littleendian(seq[i * 4], seq[i * 4 + 1],
-				 seq[i * 4 + 2], seq[i * 4 + 3]);
-	}
+	for (i = 0; i < 16; i++)
+		x[i] = z[i] = *(uint32_t *)(seq + i * 4);
 	for (i = 0; i < 10; i++)
 		salsa_doubleround(z);
 	for (i = 0; i < 16; i++) {
 		x[i] += z[i];
-		wordtobyte(&seq[i * 4], x[i]);
+		for (j = 0; j < 4; j++)
+			seq[i * 4 + j] = *((uint8_t *)&x[i] + j);
 	}
 }
 
 void salsa_expand(uint8_t k[32], uint8_t n[16], uint8_t seq[64])
 {
-	// 'o' is 'sigma'
-	/*uint8_t o0[4] = {101, 120, 112, 97},
-		o1[4] = {110, 100, 32, 51},
-		o2[4] = {50, 45, 98, 121},
-		o3[4] = {116, 101, 32, 107};*/
 	int i;
 
-	/*
-	constant  key      key     key
-	  key   constant  input   input
-	 input   input   constant  key
-	  key     key      key   constant
-	*/
+	// constant  key      key     key
+	//   key   constant  input   input
+	//  input   input   constant  key
+	//   key     key      key   constant
+
 	// "expand 32-byte k"
 	seq[0] = 101;
 	seq[1] = 120;
@@ -98,25 +88,19 @@ void salsa_encrypt(uint8_t key[32], uint8_t nonce[8], uint8_t* m,
 {
 	uint8_t out[64];
 	uint8_t n[16];
-	uint8_t number[8] = {0};
+	uint64_t* block_counter = (uint64_t *)n + 1;
 	int i, j, k;
 
 	for (i = 0; i < 8; i++) {
 		n[i] = nonce[i];
-		n[i + 8] = number[i];
+		n[i + 8] = 0;
 	}
 
 	for (i = 0; i < size / 64 ; i++) {
 		salsa_expand(key, n, out);
 		for (k = 0; k < 64; k++)
 			c[i * 64 + k] = m[i * 64 + k] ^ out[k];
-		/* number++ */
-		n[8]++;
-		for (j = 0; j < 7; j++)
-			if (!n[j + 8])
-				n[j + 9]++;
-			else
-				break;
+		(*block_counter)++;
 	}
 	if (j = size % 64) {
 		salsa_expand(key, n, out);

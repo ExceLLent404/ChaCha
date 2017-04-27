@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include <stddef.h>
-#include "../include/header.h"
 
 void chacha_quarterround(uint32_t *a, uint32_t *b,
 			 uint32_t *c, uint32_t *d)
@@ -43,27 +42,23 @@ void chacha_doubleround(uint32_t x[16])
 
 void chacha_hash(uint8_t seq[64])
 {
-	int i;
+	int i, j;
 	uint32_t x[16], z[16];
 
-	for (i = 0; i < 16; i++) {
-		x[i] = littleendian(seq[i * 4], seq[i * 4 + 1],
-				 seq[i * 4 + 2], seq[i * 4 + 3]);
-		z[i] = littleendian(seq[i * 4], seq[i * 4 + 1],
-				 seq[i * 4 + 2], seq[i * 4 + 3]);
-	}
+	for (i = 0; i < 16; i++)
+		x[i] = z[i] = *(uint32_t *)(seq + i * 4);
 	for (i = 0; i < 10; i++)
 		chacha_doubleround(z);
 	for (i = 0; i < 16; i++) {
 		x[i] += z[i];
-		wordtobyte(&seq[i * 4], x[i]);
+		for (j = 0; j < 4; j++)
+			seq[i * 4 + j] = *((uint8_t *)&x[i] + j);
 	}
 }
 
 void chacha_expand(uint8_t k[32], uint8_t n[16], uint8_t seq[64])
 {
 	int i;
-
 	
 	// constant constant constant constant
 	// key      key      key      key
@@ -99,6 +94,7 @@ void chacha_encrypt(uint8_t key[32], uint8_t nonce[8], uint8_t* m,
 {
 	uint8_t out[64];
 	uint8_t n[16];
+	uint64_t* block_counter = (uint64_t *)n;
 	int i, j, k;
 
 	for (i = 0; i < 8; i++) {
@@ -110,7 +106,7 @@ void chacha_encrypt(uint8_t key[32], uint8_t nonce[8], uint8_t* m,
 		chacha_expand(key, n, out);
 		for (k = 0; k < 64; k++)
 			c[i * 64 + k] = m[i * 64 + k] ^ out[k];
-		(*(uint64_t *)n)++; // block_counter++
+		(*block_counter)++;
 	}
 	if (j = size % 64) {
 		chacha_expand(key, n, out);

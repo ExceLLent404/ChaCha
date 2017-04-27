@@ -59,7 +59,7 @@ int chacha_hash_check()
 
 int chacha_expand_check()
 {
-	int i;
+	int i, j;
 
 	/* ----------------------- test #1 ------------------------ */
 	uint8_t k[32] = {
@@ -81,43 +81,10 @@ int chacha_expand_check()
 	};
 	uint8_t expand_expectation[64];
 	for (i = 0; i < 16; i++)
-		wordtobyte(&expand_expectation[i * 4], 
-				expand_expectation32[i]);
+		for (j = 0; j < 4; j++)
+			expand_expectation[i * 4 + j] =
+			*((uint8_t *)&expand_expectation32[i] + j);
 	chacha_expand(k, n, expand_initial);
-	for (i = 0; i < 64; i++)
-		if (expand_initial[i] != expand_expectation[i])
-			return 1;
-	/* -------------------------------------------------------- */
-	return 0;
-}
-
-int chacha_expand_i_check()
-{
-	int i;
-
-	/* ----------------------- test #1 ------------------------ */
-	uint8_t k[32] = {
-		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
-		0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
-		0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-		0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f
-	};
-	uint8_t n[16] = {
-		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x09,
-		0x00, 0x00, 0x00, 0x4a, 0x00, 0x00, 0x00, 0x00
-	};
-	uint8_t expand_initial[64];
-	uint32_t expand_expectation32[16] = {
-		0xe4e7f110, 0x15593bd1, 0x1fdd0f50, 0xc47120a3,
-		0xc7f4d1c7, 0x0368c033, 0x9aaa2204, 0x4e6cd4c3,
-		0x466482d2, 0x09aa9f07, 0x05d7c214, 0xa2028bd9,
-		0xd19c12b5, 0xb94e16de, 0xe883d0cb, 0x4e3c50a2
-	};
-	uint8_t expand_expectation[64];
-	for (i = 0; i < 16; i++)
-		wordtobyte(&expand_expectation[i * 4], 
-				expand_expectation32[i]);
-	chacha_expand_i(k, n, expand_initial);
 	for (i = 0; i < 64; i++)
 		if (expand_initial[i] != expand_expectation[i])
 			return 1;
@@ -149,10 +116,6 @@ void chacha_check()
 	}
 	if(chacha_expand_check()) {
 		printf("chacha_expand is not correct\n");
-		return;
-	}
-	if(chacha_expand_i_check()) {
-		printf("chacha_expand_i is not correct\n");
 		return;
 	}
 	

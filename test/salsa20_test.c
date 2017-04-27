@@ -139,48 +139,6 @@ int salsa_rr_check()
 	return 0;
 }
 
-int salsa_rr_asm_check()
-{
-	int i;
-
-	/* ----------------------- test #1 ------------------------ */
-	uint32_t rr_initial1[16] = {
-		0x00000001, 0x00000000, 0x00000000, 0x00000000,
-		0x00000001, 0x00000000, 0x00000000, 0x00000000,
-		0x00000001, 0x00000000, 0x00000000, 0x00000000,
-		0x00000001, 0x00000000, 0x00000000, 0x00000000
-	};
-	uint32_t rr_expectation1[16] = {
-		0x08008145, 0x00000080, 0x00010200, 0x20500000,
-		0x20100001, 0x00048044, 0x00000080, 0x00010000,
-		0x00000001, 0x00002000, 0x80040000, 0x00000000,
-		0x00000001, 0x00000200, 0x00402000, 0x88000100
-	};
-	salsa_rowround_asm(rr_initial1);
-	for (i = 0; i < 16; i++)
-		if (rr_initial1[i] != rr_expectation1[i])
-			return 1;
-	/* ----------------------- test #2 ------------------------ */
-	uint32_t rr_initial2[16] = {
-		0x08521bd6, 0x1fe88837, 0xbb2aa576, 0x3aa26365,
-		0xc54c6a5b, 0x2fc74c2f, 0x6dd39cc3, 0xda0a64f6,
-		0x90a2f23d, 0x067f95a6, 0x06b35f61, 0x41e4732e,
-		0xe859c100, 0xea4d84b7, 0x0f619bff, 0xbc6e965a
-	};
-	uint32_t rr_expectation2[16] = {
-		0xa890d39d, 0x65d71596, 0xe9487daa, 0xc8ca6a86,
-		0x949d2192, 0x764b7754, 0xe408d9b9, 0x7a41b4d1,
-		0x3402e183, 0x3c3af432, 0x50669f96, 0xd89ef0a8,
-		0x0040ede5, 0xb545fbce, 0xd257ed4f, 0x1818882d
-	};
-	salsa_rowround_asm(rr_initial2);
-	for (i = 0; i < 16; i++)
-		if (rr_initial2[i] != rr_expectation2[i])
-			return 1;
-	/* -------------------------------------------------------- */
-	return 0;
-}
-
 int salsa_cr_check()
 {
 	int i;
@@ -216,48 +174,6 @@ int salsa_cr_check()
 		0x481c2027, 0x53a8e4b5, 0x4c1f89c5, 0x3f78c9c8
 	};
 	salsa_columnround(cr_initial2);
-	for (i = 0; i < 16; i++)
-		if (cr_initial2[i] != cr_expectation2[i])
-			return 1;
-	/* -------------------------------------------------------- */
-	return 0;
-}
-
-int salsa_cr_asm_check()
-{
-	int i;
-
-	/* ----------------------- test #1 ------------------------ */
-	uint32_t cr_initial1[16] = {
-		0x00000001, 0x00000000, 0x00000000, 0x00000000,
-		0x00000001, 0x00000000, 0x00000000, 0x00000000,
-		0x00000001, 0x00000000, 0x00000000, 0x00000000,
-		0x00000001, 0x00000000, 0x00000000, 0x00000000
-	};
-	uint32_t cr_expectation1[16] = {
-		0x10090288, 0x00000000, 0x00000000, 0x00000000,
-		0x00000101, 0x00000000, 0x00000000, 0x00000000,
-		0x00020401, 0x00000000, 0x00000000, 0x00000000,
-		0x40a04001, 0x00000000, 0x00000000, 0x00000000
-	};
-	salsa_columnround_asm(cr_initial1);
-	for (i = 0; i < 16; i++)
-		if (cr_initial1[i] != cr_expectation1[i])
-			return 1;
-	/* ----------------------- test #2 ------------------------ */
-	uint32_t cr_initial2[16] = {
-		0x08521bd6, 0x1fe88837, 0xbb2aa576, 0x3aa26365,
-		0xc54c6a5b, 0x2fc74c2f, 0x6dd39cc3, 0xda0a64f6,
-		0x90a2f23d, 0x067f95a6, 0x06b35f61, 0x41e4732e,
-		0xe859c100, 0xea4d84b7, 0x0f619bff, 0xbc6e965a
-	};
-	uint32_t cr_expectation2[16] = {
-		0x8c9d190a, 0xce8e4c90, 0x1ef8e9d3, 0x1326a71a,
-		0x90a20123, 0xead3c4f3, 0x63a091a0, 0xf0708d69,
-		0x789b010c, 0xd195a681, 0xeb7d5504, 0xa774135c,
-		0x481c2027, 0x53a8e4b5, 0x4c1f89c5, 0x3f78c9c8
-	};
-	salsa_columnround_asm(cr_initial2);
 	for (i = 0; i < 16; i++)
 		if (cr_initial2[i] != cr_expectation2[i])
 			return 1;
@@ -452,26 +368,12 @@ void salsa_check()
 		printf("salsa_rowround is not correct\n");
 		return;
 	}
-	if(salsa_rr_asm_check()) {
-		printf("salsa_rowround_asm is not correct\n");
-		return;
-	}
 	if(salsa_cr_check()) {
 		printf("salsa_columnround is not correct\n");
 		return;
 	}
-	if(salsa_cr_asm_check()) {
-		printf("salsa_columnround_asm is not correct\n");
-		return;
-	}
 	if(salsa_dr_check()) {
 		printf("salsa_doubleround is not correct\n");
-		return;
-	}
-	if ((littleendian(0, 0, 0, 0) != 0x00000000) ||
-		(littleendian(86, 75, 30, 9) != 0x091e4b56) ||
-		(littleendian(255, 255, 255, 250) != 0xfaffffff)) {
-		printf("littleendian is not correct\n");
 		return;
 	}
 	if(salsa_hash_check()) {
