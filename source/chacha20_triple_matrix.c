@@ -207,14 +207,14 @@ void chacha_doubleround_asm_triple(uint32_t y[48]) {
 		"vstm.32 %[y], {q8-q11}\n\t"
 		:
 		: [y] "r" (y)
-		: "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+		: "r0", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
 		  "q8", "q9", "q10", "q11", "q12", "q13", "q14"
 	);
 }
 
 void chacha_hash_triple(uint8_t seq[192])
 {
-	int i, j;
+	int i;
 	uint32_t x[48], z[48];
 
 	for (i = 0; i < 48; i++)
@@ -222,8 +222,7 @@ void chacha_hash_triple(uint8_t seq[192])
 	chacha_doubleround_asm_triple(z); // with loop
 	for (i = 0; i < 48; i++) {
 		x[i] += z[i];
-		for (j = 0; j < 4; j++)
-			seq[i * 4 + j] = *((uint8_t *)&x[i] + j);
+		*(uint32_t *) (seq + i * 4) = x[i];
 	}
 }
 
@@ -233,12 +232,12 @@ void chacha_expand_triple(uint8_t k[32], uint8_t n[16],
 	uint64_t* block_counter = (uint64_t *)n;
 	int i, j;
 
-	
+
 	// constant constant constant constant
 	// key      key      key      key
 	// key      key      key      key
 	// input    input    input    input
-	
+
 	for (j = 0; j < 3; j++) {
 		// "expand 32-byte k"
 		seq[j * 64 + 0] = 101;
@@ -266,7 +265,7 @@ void chacha_expand_triple(uint8_t k[32], uint8_t n[16],
 	chacha_hash_triple(seq);
 }
 
-void chacha_encrypt_i(uint8_t key[32], uint8_t nonce[8], uint8_t* m, 
+void chacha_encrypt_i(uint8_t key[32], uint8_t nonce[8], uint8_t* m,
 					size_t size, uint8_t* c)
 {
 	uint8_t out[64], out_triple[192];
@@ -285,7 +284,8 @@ void chacha_encrypt_i(uint8_t key[32], uint8_t nonce[8], uint8_t* m,
 			c[t * 64 * 3 + k] =
 			m[t * 64 * 3 + k] ^ out_triple[k];
 	}
-	if (j = size % (64 * 3))
+	j = size % (64 * 3);
+	if (j)
 		for (i = 0; i < j / 64; i++) {
 			chacha_expand(key, n, out);
 			for (k = 0; k < 64; k++)
@@ -293,9 +293,10 @@ void chacha_encrypt_i(uint8_t key[32], uint8_t nonce[8], uint8_t* m,
 				m[t * 64 * 3 + i * 64 + k] ^ out[k];
 			(*block_counter)++;
 		}
-	if (j = size % 64) {
+	j = size % 64;
+	if (j) {
 		chacha_expand(key, n, out);
-		for (k = 0; k < j; k++);
+		for (k = 0; k < j; k++)
 			c[t * 64 * 3 + i * 64 + k] =
 			m[t * 64 * 3 + i * 64 + k] ^ out[k];
 	}
