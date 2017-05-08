@@ -3,7 +3,7 @@
 
 /* Loop version */
 void chacha_doubleround_asm_triple(uint32_t y[48]) {
-	asm(
+	asm volatile(
 		"vldm.32 %[y]!, {q0-q7}\n\t"
 		"vldm.32 %[y], {q8-q11}\n\t"
 		"sub %[y], #128\n\t"
@@ -50,12 +50,12 @@ void chacha_doubleround_asm_triple(uint32_t y[48]) {
 		"veor q14, q9, q10\n\t"
 
 		/* b = e <<< 12; */
-		"vshl.i32 q1, q3, #12\n\t"
-		"vshl.i32 q5, q7, #12\n\t"
-		"vshl.i32 q9, q11, #12\n\t"
-		"vsri.32 q1, q3, #20\n\t"
-		"vsri.32 q5, q7, #20\n\t"
-		"vsri.32 q9, q11, #20\n\t"
+		"vshl.i32 q1, q12, #12\n\t"
+		"vshl.i32 q5, q13, #12\n\t"
+		"vshl.i32 q9, q14, #12\n\t"
+		"vsri.32 q1, q12, #20\n\t"
+		"vsri.32 q5, q13, #20\n\t"
+		"vsri.32 q9, q14, #20\n\t"
 
 		/* a += b; */
 		"vadd.i32 q0, q1\n\t"
@@ -86,12 +86,12 @@ void chacha_doubleround_asm_triple(uint32_t y[48]) {
 		"veor q14, q9, q10\n\t"
 
 		/* b = e <<< 7; */
-		"vshl.i32 q3, q12, #7\n\t"
-		"vshl.i32 q7, q13, #7\n\t"
-		"vshl.i32 q11, q14, #7\n\t"
-		"vsri.32 q3, q12, #25\n\t"
-		"vsri.32 q7, q13, #25\n\t"
-		"vsri.32 q11, q14, #25\n\t"
+		"vshl.i32 q1, q12, #7\n\t"
+		"vshl.i32 q5, q13, #7\n\t"
+		"vshl.i32 q9, q14, #7\n\t"
+		"vsri.32 q1, q12, #25\n\t"
+		"vsri.32 q5, q13, #25\n\t"
+		"vsri.32 q9, q14, #25\n\t"
 
 		/* Diagonalround data allocation:
 		   Current state:
@@ -145,12 +145,12 @@ void chacha_doubleround_asm_triple(uint32_t y[48]) {
 		"veor q14, q9, q10\n\t"
 
 		/* b = e <<< 12; */
-		"vshl.i32 q1, q3, #12\n\t"
-		"vshl.i32 q5, q7, #12\n\t"
-		"vshl.i32 q9, q11, #12\n\t"
-		"vsri.32 q1, q3, #20\n\t"
-		"vsri.32 q5, q7, #20\n\t"
-		"vsri.32 q9, q11, #20\n\t"
+		"vshl.i32 q1, q12, #12\n\t"
+		"vshl.i32 q5, q13, #12\n\t"
+		"vshl.i32 q9, q14, #12\n\t"
+		"vsri.32 q1, q12, #20\n\t"
+		"vsri.32 q5, q13, #20\n\t"
+		"vsri.32 q9, q14, #20\n\t"
 
 		/* a += b; */
 		"vadd.i32 q0, q1\n\t"
@@ -181,12 +181,12 @@ void chacha_doubleround_asm_triple(uint32_t y[48]) {
 		"veor q14, q9, q10\n\t"
 
 		/* b = e <<< 7; */
-		"vshl.i32 q3, q12, #7\n\t"
-		"vshl.i32 q7, q13, #7\n\t"
-		"vshl.i32 q11, q14, #7\n\t"
-		"vsri.32 q3, q12, #25\n\t"
-		"vsri.32 q7, q13, #25\n\t"
-		"vsri.32 q11, q14, #25\n\t"
+		"vshl.i32 q1, q12, #7\n\t"
+		"vshl.i32 q5, q13, #7\n\t"
+		"vshl.i32 q9, q14, #7\n\t"
+		"vsri.32 q1, q12, #25\n\t"
+		"vsri.32 q5, q13, #25\n\t"
+		"vsri.32 q9, q14, #25\n\t"
 
 		/* Inverse data allocation */
 		"vext.32 q1, q1, q1, #3\n\t"
@@ -205,16 +205,17 @@ void chacha_doubleround_asm_triple(uint32_t y[48]) {
 
 		"vstm.32 %[y]!, {q0-q7}\n\t"
 		"vstm.32 %[y], {q8-q11}\n\t"
+		"sub %[y], #128\n\t"
 		:
 		: [y] "r" (y)
-		: "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+		: "r0", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
 		  "q8", "q9", "q10", "q11", "q12", "q13", "q14"
 	);
 }
 
 void chacha_hash_triple(uint8_t seq[192])
 {
-	int i, j;
+	int i;
 	uint32_t x[48], z[48];
 
 	for (i = 0; i < 48; i++)
@@ -222,8 +223,7 @@ void chacha_hash_triple(uint8_t seq[192])
 	chacha_doubleround_asm_triple(z); // with loop
 	for (i = 0; i < 48; i++) {
 		x[i] += z[i];
-		for (j = 0; j < 4; j++)
-			seq[i * 4 + j] = *((uint8_t *)&x[i] + j);
+		*(uint32_t *) (seq + i * 4) = x[i];
 	}
 }
 
@@ -233,12 +233,12 @@ void chacha_expand_triple(uint8_t k[32], uint8_t n[16],
 	uint64_t* block_counter = (uint64_t *)n;
 	int i, j;
 
-	
+
 	// constant constant constant constant
 	// key      key      key      key
 	// key      key      key      key
 	// input    input    input    input
-	
+
 	for (j = 0; j < 3; j++) {
 		// "expand 32-byte k"
 		seq[j * 64 + 0] = 101;
@@ -266,7 +266,7 @@ void chacha_expand_triple(uint8_t k[32], uint8_t n[16],
 	chacha_hash_triple(seq);
 }
 
-void chacha_encrypt_i(uint8_t key[32], uint8_t nonce[8], uint8_t* m, 
+void chacha_encrypt_i(uint8_t key[32], uint8_t nonce[8], uint8_t* m,
 					size_t size, uint8_t* c)
 {
 	uint8_t out[64], out_triple[192];
@@ -285,7 +285,8 @@ void chacha_encrypt_i(uint8_t key[32], uint8_t nonce[8], uint8_t* m,
 			c[t * 64 * 3 + k] =
 			m[t * 64 * 3 + k] ^ out_triple[k];
 	}
-	if (j = size % (64 * 3))
+	j = size % (64 * 3);
+	if (j)
 		for (i = 0; i < j / 64; i++) {
 			chacha_expand(key, n, out);
 			for (k = 0; k < 64; k++)
@@ -293,9 +294,10 @@ void chacha_encrypt_i(uint8_t key[32], uint8_t nonce[8], uint8_t* m,
 				m[t * 64 * 3 + i * 64 + k] ^ out[k];
 			(*block_counter)++;
 		}
-	if (j = size % 64) {
+	j = size % 64;
+	if (j) {
 		chacha_expand(key, n, out);
-		for (k = 0; k < j; k++);
+		for (k = 0; k < j; k++)
 			c[t * 64 * 3 + i * 64 + k] =
 			m[t * 64 * 3 + i * 64 + k] ^ out[k];
 	}

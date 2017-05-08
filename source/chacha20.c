@@ -6,16 +6,16 @@ void chacha_quarterround(uint32_t *a, uint32_t *b,
 {
 	*a += *b;
 	*d ^= *a;
-	*d = *d << 16 | *d >> 32 - 16;
+	*d = *d << 16 | *d >> (32 - 16);
 	*c += *d;
 	*b ^= *c;
-	*b = *b << 12 | *b >> 32 - 12;
+	*b = *b << 12 | *b >> (32 - 12);
 	*a += *b;
 	*d ^= *a;
-	*d = *d << 8 | *d >> 32 - 8;
+	*d = *d << 8 | *d >> (32 - 8);
 	*c += *d;
 	*b ^= *c;
-	*b = *b << 7 | *b >> 32 - 7;
+	*b = *b << 7 | *b >> (32 - 7);
 }
 
 void chacha_diagonalround(uint32_t y[16])
@@ -42,7 +42,7 @@ void chacha_doubleround(uint32_t x[16])
 
 void chacha_hash(uint8_t seq[64])
 {
-	int i, j;
+	int i;
 	uint32_t x[16], z[16];
 
 	for (i = 0; i < 16; i++)
@@ -51,20 +51,19 @@ void chacha_hash(uint8_t seq[64])
 		chacha_doubleround(z);
 	for (i = 0; i < 16; i++) {
 		x[i] += z[i];
-		for (j = 0; j < 4; j++)
-			seq[i * 4 + j] = *((uint8_t *)&x[i] + j);
+		*(uint32_t *) (seq + i * 4) = x[i];
 	}
 }
 
 void chacha_expand(uint8_t k[32], uint8_t n[16], uint8_t seq[64])
 {
 	int i;
-	
+
 	// constant constant constant constant
 	// key      key      key      key
 	// key      key      key      key
 	// input    input    input    input
-	
+
 	// "expand 32-byte k"
 	seq[0] = 101;
 	seq[1] = 120;
@@ -89,7 +88,7 @@ void chacha_expand(uint8_t k[32], uint8_t n[16], uint8_t seq[64])
 	chacha_hash(seq);
 }
 
-void chacha_encrypt(uint8_t key[32], uint8_t nonce[8], uint8_t* m, 
+void chacha_encrypt(uint8_t key[32], uint8_t nonce[8], uint8_t* m,
 					size_t size, uint8_t* c)
 {
 	uint8_t out[64];
@@ -108,9 +107,10 @@ void chacha_encrypt(uint8_t key[32], uint8_t nonce[8], uint8_t* m,
 			c[i * 64 + k] = m[i * 64 + k] ^ out[k];
 		(*block_counter)++;
 	}
-	if (j = size % 64) {
+	j = size % 64;
+	if (j) {
 		chacha_expand(key, n, out);
-		for (k = 0; k < j; k++);
+		for (k = 0; k < j; k++)
 			c[i * 64 + k] = m[i * 64 + k] ^ out[k];
 	}
 }

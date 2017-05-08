@@ -4,10 +4,10 @@
 void salsa_quarterround(uint32_t *y0, uint32_t *y1,
 			 uint32_t *y2, uint32_t *y3)
 {
-	*y1 ^= ((*y0 + *y3) << 7 | (*y0 + *y3) >> 32 - 7);
-	*y2 ^= ((*y1 + *y0) << 9 | (*y1 + *y0) >> 32 - 9);
-	*y3 ^= ((*y2 + *y1) << 13 | (*y2 + *y1) >> 32 - 13);
-	*y0 ^= ((*y3 + *y2) << 18 | (*y3 + *y2) >> 32 - 18);
+	*y1 ^= ((*y0 + *y3) << 7 | (*y0 + *y3) >> (32 - 7));
+	*y2 ^= ((*y1 + *y0) << 9 | (*y1 + *y0) >> (32 - 9));
+	*y3 ^= ((*y2 + *y1) << 13 | (*y2 + *y1) >> (32 - 13));
+	*y0 ^= ((*y3 + *y2) << 18 | (*y3 + *y2) >> (32 - 18));
 }
 
 void salsa_rowround(uint32_t y[16])
@@ -34,7 +34,7 @@ void salsa_doubleround(uint32_t x[16])
 
 void salsa_hash(uint8_t seq[64])
 {
-	int i, j;
+	int i;
 	uint32_t x[16], z[16];
 
 	for (i = 0; i < 16; i++)
@@ -43,8 +43,7 @@ void salsa_hash(uint8_t seq[64])
 		salsa_doubleround(z);
 	for (i = 0; i < 16; i++) {
 		x[i] += z[i];
-		for (j = 0; j < 4; j++)
-			seq[i * 4 + j] = *((uint8_t *)&x[i] + j);
+		*(uint32_t *) (seq + i * 4) = x[i];
 	}
 }
 
@@ -83,7 +82,7 @@ void salsa_expand(uint8_t k[32], uint8_t n[16], uint8_t seq[64])
 	salsa_hash(seq);
 }
 
-void salsa_encrypt(uint8_t key[32], uint8_t nonce[8], uint8_t* m, 
+void salsa_encrypt(uint8_t key[32], uint8_t nonce[8], uint8_t* m,
 					size_t size, uint8_t* c)
 {
 	uint8_t out[64];
@@ -102,9 +101,10 @@ void salsa_encrypt(uint8_t key[32], uint8_t nonce[8], uint8_t* m,
 			c[i * 64 + k] = m[i * 64 + k] ^ out[k];
 		(*block_counter)++;
 	}
-	if (j = size % 64) {
+	j = size % 64;
+	if (j) {
 		salsa_expand(key, n, out);
-		for (k = 0; k < j; k++);
+		for (k = 0; k < j; k++)
 			c[i * 64 + k] = m[i * 64 + k] ^ out[k];
 	}
 }

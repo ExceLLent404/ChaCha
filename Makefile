@@ -1,6 +1,6 @@
 CC = ../gcc-linaro/bin/arm-linux-gnueabihf-gcc
 CFLAGS = -c -Wall -pedantic -mfpu=neon -march=armv7-a -O3
-LDFLAGS = -static -L ./lib -lcrypto
+LDFLAGS = -static
 
 DIR_SOURCE = source
 DIR_HEADER = include
@@ -21,7 +21,7 @@ OBJECT_FILES := $(addprefix $(DIR_OUTPUT)/,$(OBJECTS))
 ASM := $(notdir $(patsubst %.c,%.S,$(wildcard $(LOOKUP_C))))
 ASM_FILES := $(addprefix $(DIR_OUTPUT)/,$(ASM))
 
-TARGET = test_aes
+TARGET = test_chacha20
 
 all: $(TARGET)
 
