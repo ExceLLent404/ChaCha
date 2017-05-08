@@ -3,7 +3,7 @@
 
 /* Loop version */
 void chacha_doubleround_asm_triple(uint32_t y[48]) {
-	asm(
+	asm volatile(
 		"vldm.32 %[y]!, {q0-q7}\n\t"
 		"vldm.32 %[y], {q8-q11}\n\t"
 		"sub %[y], #128\n\t"
@@ -50,12 +50,12 @@ void chacha_doubleround_asm_triple(uint32_t y[48]) {
 		"veor q14, q9, q10\n\t"
 
 		/* b = e <<< 12; */
-		"vshl.i32 q1, q3, #12\n\t"
-		"vshl.i32 q5, q7, #12\n\t"
-		"vshl.i32 q9, q11, #12\n\t"
-		"vsri.32 q1, q3, #20\n\t"
-		"vsri.32 q5, q7, #20\n\t"
-		"vsri.32 q9, q11, #20\n\t"
+		"vshl.i32 q1, q12, #12\n\t"
+		"vshl.i32 q5, q13, #12\n\t"
+		"vshl.i32 q9, q14, #12\n\t"
+		"vsri.32 q1, q12, #20\n\t"
+		"vsri.32 q5, q13, #20\n\t"
+		"vsri.32 q9, q14, #20\n\t"
 
 		/* a += b; */
 		"vadd.i32 q0, q1\n\t"
@@ -86,12 +86,12 @@ void chacha_doubleround_asm_triple(uint32_t y[48]) {
 		"veor q14, q9, q10\n\t"
 
 		/* b = e <<< 7; */
-		"vshl.i32 q3, q12, #7\n\t"
-		"vshl.i32 q7, q13, #7\n\t"
-		"vshl.i32 q11, q14, #7\n\t"
-		"vsri.32 q3, q12, #25\n\t"
-		"vsri.32 q7, q13, #25\n\t"
-		"vsri.32 q11, q14, #25\n\t"
+		"vshl.i32 q1, q12, #7\n\t"
+		"vshl.i32 q5, q13, #7\n\t"
+		"vshl.i32 q9, q14, #7\n\t"
+		"vsri.32 q1, q12, #25\n\t"
+		"vsri.32 q5, q13, #25\n\t"
+		"vsri.32 q9, q14, #25\n\t"
 
 		/* Diagonalround data allocation:
 		   Current state:
@@ -145,12 +145,12 @@ void chacha_doubleround_asm_triple(uint32_t y[48]) {
 		"veor q14, q9, q10\n\t"
 
 		/* b = e <<< 12; */
-		"vshl.i32 q1, q3, #12\n\t"
-		"vshl.i32 q5, q7, #12\n\t"
-		"vshl.i32 q9, q11, #12\n\t"
-		"vsri.32 q1, q3, #20\n\t"
-		"vsri.32 q5, q7, #20\n\t"
-		"vsri.32 q9, q11, #20\n\t"
+		"vshl.i32 q1, q12, #12\n\t"
+		"vshl.i32 q5, q13, #12\n\t"
+		"vshl.i32 q9, q14, #12\n\t"
+		"vsri.32 q1, q12, #20\n\t"
+		"vsri.32 q5, q13, #20\n\t"
+		"vsri.32 q9, q14, #20\n\t"
 
 		/* a += b; */
 		"vadd.i32 q0, q1\n\t"
@@ -181,12 +181,12 @@ void chacha_doubleround_asm_triple(uint32_t y[48]) {
 		"veor q14, q9, q10\n\t"
 
 		/* b = e <<< 7; */
-		"vshl.i32 q3, q12, #7\n\t"
-		"vshl.i32 q7, q13, #7\n\t"
-		"vshl.i32 q11, q14, #7\n\t"
-		"vsri.32 q3, q12, #25\n\t"
-		"vsri.32 q7, q13, #25\n\t"
-		"vsri.32 q11, q14, #25\n\t"
+		"vshl.i32 q1, q12, #7\n\t"
+		"vshl.i32 q5, q13, #7\n\t"
+		"vshl.i32 q9, q14, #7\n\t"
+		"vsri.32 q1, q12, #25\n\t"
+		"vsri.32 q5, q13, #25\n\t"
+		"vsri.32 q9, q14, #25\n\t"
 
 		/* Inverse data allocation */
 		"vext.32 q1, q1, q1, #3\n\t"
@@ -205,6 +205,7 @@ void chacha_doubleround_asm_triple(uint32_t y[48]) {
 
 		"vstm.32 %[y]!, {q0-q7}\n\t"
 		"vstm.32 %[y], {q8-q11}\n\t"
+		"sub %[y], #128\n\t"
 		:
 		: [y] "r" (y)
 		: "r0", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
