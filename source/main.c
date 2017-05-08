@@ -367,9 +367,12 @@ int main(int argc, char **argv)
 			        filename, size);
 	} else {
 		size = strlen(str);
-		if (!quiet)
+		if (!quiet) {
 			printf("Using string \"%s\" with length %u\n",
 			        str, size);
+			printf("Hex representation: ");
+			print_hex(str, size);
+		}
 	}
 
 	ECRYPT_init();
